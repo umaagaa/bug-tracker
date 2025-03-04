@@ -1,45 +1,67 @@
 import { useState, useEffect } from "react";
 
-function BugModal({ closeModal, bug, saveBug }) {
-    const [name, setName] = useState("");
-    const [priority, setPriority] = useState("Low");
-    const [version, setVersion] = useState("");
+function BugModal({ closeModal, bug, setBugs }) {
+    const [name, setName] = useState(bug?.name || "");
+    const [priority, setPriority] = useState(bug?.priority || "Low");
+    const [version, setVersion] = useState(bug?.version || "");
 
     useEffect(() => {
         if (bug) {
-            setName(bug.name);
-            setPriority(bug.priority);
-            setVersion(bug.version);
+            setName(bug.name || "");
+            setPriority(bug.priority || "Low");
+            setVersion(bug.version || "");
         }
     }, [bug]);
 
     const handleSave = () => {
-        if (!name.trim()) return;
+        if (!name.trim()) {
+            alert("Bug name is required!");
+            return;
+        }
 
-        const newBug = { 
-            id: bug?.id || Date.now(), 
-            name, 
-            priority, 
-            version 
-        };
+        const storedBugs = JSON.parse(localStorage.getItem("bugs")) || [];
+        let updatedBugs;
 
-        saveBug(newBug);
+        if (bug) {
+            // Edit existing bug
+            updatedBugs = storedBugs.map(b => (b.id === bug.id ? { ...b, name, priority, version } : b));
+        } else {
+            // Create new bug
+            const newBug = { id: Date.now(), name, priority, version };
+            updatedBugs = [...storedBugs, newBug];
+        }
+
+        setBugs(updatedBugs);
+        localStorage.setItem("bugs", JSON.stringify(updatedBugs));
+        
+        // Emit event da obavijesti ViewBugs da su podaci promijenjeni
+        window.dispatchEvent(new Event("storage"));
+
         closeModal();
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-            <div className="bg-white p-6 rounded shadow-lg">
+        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded shadow-lg w-1/3">
                 <h2 className="text-2xl font-bold mb-4">{bug ? "Edit Bug" : "Create Bug"}</h2>
-                <input className="border p-2 mb-3 w-full" placeholder="Bug Name" value={name} onChange={(e) => setName(e.target.value)} />
+                
+                <label className="block font-medium">Name</label>
+                <input className="border p-2 mb-3 w-full" value={name} onChange={(e) => setName(e.target.value)} />
+
+                <label className="block font-medium">Priority</label>
                 <select className="border p-2 mb-3 w-full" value={priority} onChange={(e) => setPriority(e.target.value)}>
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
                     <option value="High">High</option>
                 </select>
-                <input className="border p-2 mb-3 w-full" placeholder="Version" value={version} onChange={(e) => setVersion(e.target.value)} />
-                <button onClick={handleSave} className="bg-green-500 text-white p-2 rounded">Save</button>
-                <button onClick={closeModal} className="bg-gray-500 text-white p-2 rounded ml-2">Cancel</button>
+
+                <label className="block font-medium">Version</label>
+                <input className="border p-2 mb-3 w-full" value={version} onChange={(e) => setVersion(e.target.value)} />
+
+                <div className="flex justify-between mt-4">
+                    <button onClick={handleSave} className="bg-green-500 text-white px-4 py-2 rounded">Save</button>
+                    <button onClick={closeModal} className="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+                </div>
             </div>
         </div>
     );

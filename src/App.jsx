@@ -8,10 +8,14 @@ import BugModal from "./components/BugModal";
 function App() {
     const [user, setUser] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [bugs, setBugs] = useState([]);
 
     useEffect(() => {
         const savedUser = JSON.parse(localStorage.getItem("user"));
         if (savedUser) setUser(savedUser);
+
+        const storedBugs = JSON.parse(localStorage.getItem("bugs")) || [];
+        setBugs(storedBugs);
     }, []);
 
     const openModal = () => {
@@ -23,8 +27,9 @@ function App() {
     };
 
     const saveBug = (newBug) => {
-        const savedBugs = JSON.parse(localStorage.getItem("bugs")) || [];
-        localStorage.setItem("bugs", JSON.stringify([...savedBugs, newBug]));
+        const updatedBugs = [...bugs, newBug];
+        localStorage.setItem("bugs", JSON.stringify(updatedBugs));
+        setBugs(updatedBugs);
         setIsModalOpen(false);
     };
 
@@ -41,7 +46,9 @@ function App() {
                         <li className="mb-2"><a href="/dashboard">Dashboard</a></li>
                         <li className="mb-2"><a href="/view-bugs">View Bugs</a></li>
                         {user.role === "admin" && (
-                            <li><button onClick={openModal} className="w-full text-left">Create Bug</button></li>
+                            <li>
+                                <button onClick={openModal} className="w-full text-left">Create Bug</button>
+                            </li>
                         )}
                     </ul>
                     <button 
@@ -56,15 +63,16 @@ function App() {
                 </aside>
 
                 <main className="w-3/4 p-6">
-                    <Routes>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/view-bugs" element={<ViewBugs />} />
-                        <Route path="*" element={<Navigate to="/dashboard" />} />
-                    </Routes>
+                <Routes>
+    <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/view-bugs" element={<ViewBugs bugs={bugs} />} />
+    <Route path="*" element={<Navigate to="/dashboard" />} />
+</Routes>
+
                 </main>
             </div>
 
-            {isModalOpen && <BugModal closeModal={closeModal} saveBug={saveBug} />}
+            {isModalOpen && <BugModal closeModal={closeModal} saveBug={saveBug} setBugs={setBugs} />}
         </Router>
     );
 }
